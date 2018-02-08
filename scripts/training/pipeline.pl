@@ -16,7 +16,7 @@
 
 # This script implements the Joshua pipeline.  It can run a complete
 # pipeline --- from raw training corpora to bleu scores on a test set
-# --- and it allows jumping into arbitrary points of the pipeline. 
+# --- and it allows jumping into arbitrary points of the pipeline.
 
 my $JOSHUA;
 
@@ -88,6 +88,7 @@ my $DO_PACK_GRAMMARS = 1;
 my $SCRIPTDIR = "$JOSHUA/scripts";
 my $TOKENIZER_SOURCE = "$SCRIPTDIR/preparation/tokenize.pl";
 my $TOKENIZER_TARGET = "$SCRIPTDIR/preparation/tokenize.pl";
+my $CHINESE_TOKENIZER = $"java -jar java/target/edu.upenn.cis.ppdb.TokenizeChinese-jar-with-dependencies.jar"
 my $NORMALIZER = "$SCRIPTDIR/preparation/normalize.pl";
 my $LOWERCASER = "$SCRIPTDIR/preparation/lowercase.pl";
 my $GIZA_TRAINER = "$SCRIPTDIR/training/run-giza.pl";
@@ -354,10 +355,10 @@ my $cachepipe = new CachePipe();
 # that this is not backwards compatible!
 $cachepipe->omit_cmd();
 
-$SIG{INT} = sub { 
+$SIG{INT} = sub {
   print "* Got C-c, quitting\n";
   $cachepipe->cleanup();
-  exit 1; 
+  exit 1;
 };
 
 # if no LMs were specified, we need to build one from the target side of the corpus
@@ -435,7 +436,7 @@ if (@CORPORA == 0 and $STEPS{$FIRST_STEP} < $STEPS{TUNE}) {
 
 # make sure a tuning corpus was provided if we're doing tuning
 if (scalar(@TUNE) == 0 and ($STEPS{$FIRST_STEP} <= $STEPS{TUNE}
-                         and $STEPS{$LAST_STEP} >= $STEPS{TUNE})) { 
+                         and $STEPS{$LAST_STEP} >= $STEPS{TUNE})) {
   print "* FATAL: need at least one tuning set (--tune)\n";
   exit 1;
 }
@@ -521,7 +522,7 @@ foreach my $corpus (@CORPORA) {
     if (! -e "$corpus.$ext") {
       print "* FATAL: can't find '$corpus.$ext'";
       exit 1;
-    } 
+    }
   }
 }
 
@@ -759,7 +760,7 @@ if ($FIRST_STEP eq "ALIGN") {
     exit 1;
   }
 
-  # TODO: copy the files into the canonical place 
+  # TODO: copy the files into the canonical place
 
   # Jumping straight to alignment is probably the same thing as
   # skipping tokenization, and might also be implemented by a
@@ -795,10 +796,10 @@ if (! defined $ALIGNMENT) {
 		# We want to prevent a very small last chunk, which we accomplish
 		# by folding the last chunk into the penultimate chunk.
 		my $chunk = ($numchunks <= 2)
-				? 0 
+				? 0
 				: min($numchunks - 2,
 							int( (${.} - 1) / $ALIGNER_BLOCKSIZE ));
-		
+
 		if ($chunk != $lastchunk) {
 			close CHUNK_SOURCE;
 			close CHUNK_TARGET;
@@ -985,10 +986,10 @@ if ($GRAMMAR_TYPE eq "samt" || $GRAMMAR_TYPE eq "ghkm") {
 		# skipped straight to this step, passing a parsed corpus
 
 		$TRAIN{parsed} = "$DATA_DIRS{train}/corpus.parsed.$TARGET";
-		
+
 		$cachepipe->cmd("cp-train-$TARGET",
 										"cp $TRAIN{target} $TRAIN{parsed}",
-										$TRAIN{target}, 
+										$TRAIN{target},
 										$TRAIN{parsed});
 
 		$TRAIN{target} = "$DATA_DIRS{train}/corpus.$TARGET";
@@ -1013,7 +1014,7 @@ if ($GRAMMAR_TYPE eq "samt" || $GRAMMAR_TYPE eq "ghkm") {
 		print "  using --parsed-corpus CORPUS.\n";
 		exit 1;
   }
-	
+
 }
 
 # we may have skipped directly to this step, in which case we need to
@@ -1147,7 +1148,7 @@ if (! defined $GRAMMAR_FILE) {
 
     $cachepipe->cmd("thrax-prep",
                     "hadoop fs -rm -r $THRAXDIR; hadoop fs -mkdir $THRAXDIR; hadoop fs -put $DATA_DIRS{train}/thrax-input-file $THRAXDIR/input-file",
-                    "$DATA_DIRS{train}/thrax-input-file", 
+                    "$DATA_DIRS{train}/thrax-input-file",
                     "grammar.gz");
 
     $thrax_input = "$THRAXDIR/input-file";
@@ -1163,7 +1164,7 @@ if (! defined $GRAMMAR_FILE) {
                     "$DATA_DIRS{train}/thrax-input-file",
                     $thrax_file,
                     "grammar.gz");
-#perl -pi -e 's/\.?0+\b//g' grammar; 
+#perl -pi -e 's/\.?0+\b//g' grammar;
 
     $GRAMMAR_FILE = "grammar.gz";
 
@@ -1279,7 +1280,7 @@ if (defined $TRAIN{target} and $DO_BUILD_LM_FROM_CORPUS) {
                   $TRAIN{target},
                   "$TRAIN{target}.uniq");
 
-  # If an NER Tagger is specified, use that to annotate the corpus before 
+  # If an NER Tagger is specified, use that to annotate the corpus before
   # sending it off to the LM
   my $ner_return = ner_annotate("$TRAIN{target}.uniq", "$TRAIN{target}.uniq.ner", $TARGET);
   if ($ner_return == 2) {
@@ -1627,7 +1628,7 @@ if ($OPTIMIZER_RUN == 1 and defined $TEST_GRAMMAR and $GRAMMAR_TYPE ne "phrase" 
                     get_file_from_grammar($TEST_GRAMMAR),
                     "$DATA_DIRS{test}/grammar.glue");
     $GLUE_GRAMMAR_FILE = "$DATA_DIRS{test}/grammar.glue";
-    
+
   } else {
     # just create a symlink to it
     my $filename = $DATA_DIRS{test} . "/" . basename($GLUE_GRAMMAR_FILE);
@@ -1729,7 +1730,7 @@ if ($DO_MBR) {
                   "java -Xmx500m -cp $JOSHUA/class -Dfile.encoding=utf8 joshua.util.ExtractTopCand $nbestoutput $bestoutput",
                   $nbestoutput,
                   $bestoutput);
-}  
+}
 
 # Now compute the BLEU score on the 1-best output
 $cachepipe->cmd("test-bleu-${OPTIMIZER_RUN}",
@@ -1756,7 +1757,7 @@ if ($DO_MBR) {
   $numlines--;
   my $mbr_output = "$testdir/output.mbr";
 
-  $cachepipe->cmd("test-onebest-parmbr-${OPTIMIZER_RUN}", 
+  $cachepipe->cmd("test-onebest-parmbr-${OPTIMIZER_RUN}",
                   "cat $nbestoutput | java -Xmx1700m -cp $JOSHUA/class -Dfile.encoding=utf8 joshua.decoder.NbestMinRiskReranker false 1 $NUM_THREADS > $mbr_output",
                   $nbestoutput,
                   $mbr_output);
@@ -1809,7 +1810,7 @@ sub prepare_data {
 
   # copy the data from its original location to our location
 	my $numlines = -1;
-  
+
   # Build the list of extensions. For training data, there may be multiple corpora; for
   # tuning and test data, there may be multiple references.
   my @exts = ($SOURCE);
@@ -1862,15 +1863,23 @@ sub prepare_data {
     # tokenize the data
     foreach my $lang (@exts) {
       if (-e "$DATA_DIRS{$label}/$prefix.$lang") {
-        if (is_lattice("$DATA_DIRS{$label}/$prefix.$lang")) { 
+        if (is_lattice("$DATA_DIRS{$label}/$prefix.$lang")) {
           system("cp $DATA_DIRS{$label}/$prefix.$lang $DATA_DIRS{$label}/$prefix.tok.$lang");
         } else {
           my $TOKENIZER = ($lang eq $SOURCE) ? $TOKENIZER_SOURCE : $TOKENIZER_TARGET;
 
           my $ext = $lang; $ext =~ s/\.\d//;
-          $cachepipe->cmd("$label-tokenize-$lang",
-                          "$CAT $DATA_DIRS{$label}/$prefix.$lang | $NORMALIZER $ext | $TOKENIZER -l $ext 2> /dev/null > $DATA_DIRS{$label}/$prefix.tok.$lang",
-                          "$DATA_DIRS{$label}/$prefix.$lang", "$DATA_DIRS{$label}/$prefix.tok.$lang");
+          
+          # Use the Stanford Tokenizer if the language is Chinese
+          if ($lang eq "zh") {
+            $cachepipe->cmd("$label-tokenize-$lang",
+                            "$CAT $DATA_DIRS{$label}/$prefix.$lang | $CHINESE_TOKENIZER 2> /dev/null > $DATA_DIRS{$label}/$prefix.tok.$lang",
+                            "$DATA_DIRS{$label}/$prefix.$lang", "$DATA_DIRS{$label}/$prefix.tok.$lang");
+          } else {
+            $cachepipe->cmd("$label-tokenize-$lang",
+                            "$CAT $DATA_DIRS{$label}/$prefix.$lang | $NORMALIZER $ext | $TOKENIZER -l $ext 2> /dev/null > $DATA_DIRS{$label}/$prefix.tok.$lang",
+                            "$DATA_DIRS{$label}/$prefix.$lang", "$DATA_DIRS{$label}/$prefix.tok.$lang");
+          }
         }
 
       }
@@ -1906,9 +1915,9 @@ sub prepare_data {
     # lowercase
     foreach my $lang (@exts) {
       if (-e "$DATA_DIRS{$label}/$prefix.$lang") {
-        if (is_lattice("$DATA_DIRS{$label}/$prefix.$lang")) { 
+        if (is_lattice("$DATA_DIRS{$label}/$prefix.$lang")) {
           system("cat $DATA_DIRS{$label}/$prefix.$lang > $DATA_DIRS{$label}/$prefix.lc.$lang");
-        } else { 
+        } else {
           $cachepipe->cmd("$label-lowercase-$lang",
                           "cat $DATA_DIRS{$label}/$prefix.$lang | $LOWERCASER > $DATA_DIRS{$label}/$prefix.lc.$lang",
                           "$DATA_DIRS{$label}/$prefix.$lang",
@@ -2033,7 +2042,7 @@ sub get_features {
         } else {
           $features{$feature_no++} = 1;
         }
-      } 
+      }
     }
     close(GRAMMAR);
     return keys(%features);
