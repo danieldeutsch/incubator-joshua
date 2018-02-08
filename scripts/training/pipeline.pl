@@ -88,7 +88,6 @@ my $DO_PACK_GRAMMARS = 1;
 my $SCRIPTDIR = "$JOSHUA/scripts";
 my $TOKENIZER_SOURCE = "$SCRIPTDIR/preparation/tokenize.pl";
 my $TOKENIZER_TARGET = "$SCRIPTDIR/preparation/tokenize.pl";
-my $CHINESE_TOKENIZER = "java -jar java/target/edu.upenn.cis.ppdb.TokenizeChinese-jar-with-dependencies.jar";
 my $NORMALIZER = "$SCRIPTDIR/preparation/normalize.pl";
 my $LOWERCASER = "$SCRIPTDIR/preparation/lowercase.pl";
 my $GIZA_TRAINER = "$SCRIPTDIR/training/run-giza.pl";
@@ -98,6 +97,7 @@ my $COPY_CONFIG = "$SCRIPTDIR/copy-config.pl";
 my $BUNDLER = "$JOSHUA/scripts/support/run_bundler.py";
 my $STARTDIR;
 my $RUNDIR = $STARTDIR = getcwd();
+my $CHINESE_TOKENIZER = "java -jar $RUNDIR/java/target/edu.upenn.cis.ppdb.TokenizeChinese-jar-with-dependencies.jar";
 my $GRAMMAR_TYPE = undef; # hiero, itg, samt, ghkm, phrase, or moses
 my $SEARCH_ALGORITHM = "cky"; # or "stack" (for phrase-based)
 
